@@ -68,7 +68,7 @@ set xlabel "time (s)"
 set ylabel "queueSize (packets)"
 filenames(n)=sprintf("$ARGV[0]-$ARGV[1]-$ARGV[2]-queueSize%d-%d.tr",n,$ARGV[3]+1) 
 curvetitles(n)=sprintf("Flow%d-%d",n,$ARGV[3]+1)
-plot for [i=0:$ARGV[3]-1] filenames(i) with line linewidth 3 title curvetitles(i)
+plot for [i=0:$ARGV[3]] filenames(i) with line linewidth 3 title curvetitles(i)
 EOPLOT
 
 close $PLOT;

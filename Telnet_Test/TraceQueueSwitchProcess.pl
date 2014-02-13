@@ -50,9 +50,9 @@ if($ARGV[1] eq "DropTail")
 	open($OUT4,$fname) || die "cannot open the file at $!";
 }
 elsif($ARGV[1] eq "FQ") {
-	@queueSizePacket=(0) x $ARGV[3];
-	@queueSizeByte=(0) x $ARGV[3];
-	for($i=0;$i<$ARGV[3];$i++)
+	@queueSizePacket=(0) x ($ARGV[3]+1);
+	@queueSizeByte=(0) x ($ARGV[3]+1);
+	for($i=0;$i<=$ARGV[3];$i++)
 	{
 		$fname=sprintf(">$ARGV[0]-$ARGV[1]-$ARGV[2]-queueSize%d-%d.tr",$i,$ARGV[3]+1);
 		open($OUT4[$i],$fname) || die "cannot open the file at $!";
@@ -82,6 +82,8 @@ while($line=<INTrace>)
 			$queueSizeByte=$queueSizeByte-$packetSize;
 		}
 		elsif($ARGV[1] eq "FQ")	{
+			$queueSizePacket[$ARGV[3]]=$queueSizePacket[$ARGV[3]]-1;
+			$queueSizeByte[$ARGV[3]]=$queueSizeByte[$ARGV[3]]-$packetSize;
 			$queueSizePacket[$srcAddrs[0]]=$queueSizePacket[$srcAddrs[0]]-1;
 			$queueSizeByte[$srcAddrs[0]]=$queueSizeByte[$srcAddrs[0]]-$packetSize;
 		}
@@ -101,6 +103,12 @@ while($line=<INTrace>)
 			#}
 		}
 		elsif($ARGV[1] eq "FQ") {
+			$queueSizePacket[$ARGV[3]]=$queueSizePacket[$ARGV[3]]+1;
+			$queueSizeByte[$ARGV[3]]=$queueSizeByte[$ARGV[3]]+$packetSize;
+			
+			$outTemp=$OUT4[$ARGV[3]];
+			print $outTemp "$trace[1] $queueSizePacket[$ARGV[3]]\n";
+			
 			$queueSizePacket[$srcAddrs[0]]=$queueSizePacket[$srcAddrs[0]]+1;
 			$queueSizeByte[$srcAddrs[0]]=$queueSizeByte[$srcAddrs[0]]+$packetSize;
 			#if($srcAddrs[0]<$telnetNumber)
@@ -119,6 +127,8 @@ while($line=<INTrace>)
 			$queueSizeByte=$queueSizeByte-$packetSize;
 		}
 		elsif($ARGV[1] eq "FQ")	{
+			$queueSizePacket[$ARGV[3]]=$queueSizePacket[$ARGV[3]]-1;
+			$queueSizeByte[$ARGV[3]]=$queueSizeByte[$ARGV[3]]-$packetSize;
 			$queueSizePacket[$srcAddrs[0]]=$queueSizePacket[$srcAddrs[0]]-1;
 			$queueSizeByte[$srcAddrs[0]]=$queueSizeByte[$srcAddrs[0]]-$packetSize;
 		}
