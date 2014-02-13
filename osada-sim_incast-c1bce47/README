@@ -1,0 +1,170 @@
+このリポジトリは，ns-2を使ったTCP Incastのシミュレーション用モジュールを扱っています．
+
+＜動作環境＞
+OS: FreeBSD8.2R or CentOS5.5
+NS: ns-allinone-2.35
+
+＜インストール＞
+
+1. クローンの作成
+> git clone git://github.com/osada/sim_incast.git ns-allinone-2.35
+
+2. ns-2の展開
+> tar -zxvf ns-allinone-2.35.tar.gz
+
+3. 1で作成したクローンとの整合性を確認
+> git reset --hard
+
+※1〜3は，単純にns-2をインストールした後，本zipを上書き展開するだけでもOK
+　ただし，そうした場合は，gitへのpull/pushの設定は個別に行うこと．
+
+4. ns-2のインストールスクリプトを実行する（ユーザ権限でOK）
+> cd ~/ns-allinone-2.35
+> ./install
+
+5. Goodput計算用プログラムをコンパイルする．
+  実行ファイル名はa.outとする．
+
+> cd ~/ns-allinone-2.35/work
+> gcc tp.c
+> ls
+a.out
+
+
+＜シミュレーションの実行方法＞
+
+1. 作業用ディレクトリに移動して，シミュレーション実行管理スクリプトを起動する
+   （スペックによっては完了まで数日かかります）
+   CentOSで実行するときは，start.sh内部変数のSEQ_CMDの値を"seq"に書き換えすること．
+
+> cd ~/ns-allione-2.35/work
+> sh start.sh
+
+2. 結果を確認する
+
+>  cat goodput.<date>.dat
+
+
+＜シミュレーション内容の変更方法＞
+
+A. シナリオを変更する場合
+ ⇒ incast.tclを編集する（要TCLプログラミング能力）
+
+B. シミュレーションパラメタを変更する場合
+ ⇒ start.shを編集する．ただし，一部パラメタの変更はincast.tclの修正が必要
+   （要TCL, Shellプログラミング能力）
+
+C. TCPモジュールを変更する場合
+ ⇒ 対象モジュールを変更して，再コンパイルする
+   （要C++プログラミング能力）
+
+> cd ns-2.35
+> emacs tcp/tcp-newreno.cc
+> make  #FreeBSDのときは，gmakeとすること
+
+D. 新規通信モジュールを作成する場合（作成するものによるので詳細は別途）
+
+（例：Agent追加の場合）
+> cd ns-2.35
+> emacs tcp/tcp-ia-sink.cc
+> emacs tcl/lib/ns-default.tcl # 新規モジュールがTCLバインド変数を持たない場合は，不要
+> emacs Makefile.in
+> ./configure  # 既にMakefileが存在する場合は，Makefileを直接編集しても可
+> make  #FreeBSDのときは，gmakeとすること
+
+
+＜構成要素＞
+
+a. work/tp.c: Goodput計算用プログラム
+         第一引数: パケットトレースファイル(out.ns)
+         第二引数: TCPイベントトレースファイル(out.et)
+         第三引数: Goodput測定ノード番号(1)
+         第四引数: Goodput計算粒度sec(1.0)
+
+b. work/incast.tcl: ns-2用シナリオファイル
+         第一引数: サーバ数
+         第二引数: クライアントの広告ウィンドウサイズpkt
+         第三引数: SRUサイズKB(各サーバが送信するデータ量)
+         第四引数: ボトルネックリンクのバッファ容量pkt
+         第五引数: 乱数seed
+  ※内部変数に，RTT値やSYN遅延値の設定項目あり
+
+c. work/start.sh: シミュレーション実行管理スクリプト
+            (上記b.a.を交互に繰り返し実行するもの)
+         引数: なし
+  ※内部変数に，シミュレーション設定変数あり（別途解説予定）
+
+d. work/incast-ia.tcl: ns-2用シナリオファイル（IncastAvoidance用）
+e. work/incast-ic.tcl: ns-2用シナリオファイル（ICTCP用）
+f. work/incast-cl.tcl: ns-2用シナリオファイル（ConnectionLimit用）
+
+g. ns-2.35/tcp/tcp-ia-sink.cc: IncastAvoidance用--Forced3DupAcks
+h. ns-2.35/tcp/tcp-ic-sink.cc: ICTCP用--ControlAdvertisedWindowSize
+i. ns-2.35/tcp/tcp-newreno.cc: バグ修正（疑似FINの扱いの改良）
+j. ns-2.35/tcp/tcp.cc: AdvertisedWindow(wnd_)の動的制御
+k. ns-2.35/tcp/tcp.h: AdvertisedWindowのヘッダ領域定義
+l. ns-2.35/tcl/lib/ns-defaults.tcl: 初期値
+
+
+--
+Shigeyuki Osada
+
+
+=======================================================================
+1. Introduction
+----------------
+
+Ns-allinone is a package which contains required components and some of
+optional components used in running ns. The package contains an
+"install" script to automatically configure, compile and install these
+components. If you haven't installed ns before and want to quickly try
+ns out, ns-allinone may be easier than getting all the pieces by hand.
+ 
+Currently the package contains:
+  
+- Tcl       Tcl release 8.5.8    (required component)
+- Tk        Tk release 8.5.8     (required component)
+- Otcl      otcl release 1.14    (required component)
+- TclCL     tclcl release 1.20  (required component)
+- Ns        ns release 2.35    (required component)
+- Nam       Nam release 1.14       (optional component)
+- Xgraph    xgraph version 12     (optional component)
+- GT-ITM    Georgia Tech Internetwork
+            Topology Modeler      (optional component)
+- SGB       Stanford GraphBase
+            package               (optional component)
+- CWEB      CWeb version 1.0 (?)  (optional component)
+- ZLib      zlib version 1.2.3    (optional component) 
+
+2. FEATURES IN ns-allinone-2.35
+-------------------------------
+
+Features in this version include:
+
+- Update to Tcl/Tk 8.5 series (becoming the default Tcl/Tk version on
+  many platforms)
+
+- Update for Cygwin-1.7.1 release for Windows
+
+- New features for ns-2.35 release (see the ns-2/CHANGES.html file)
+
+3. Installing the package
+--------------------------
+
+All you need to do is type "./install" under this directory. The install
+script will compile and install the whole package for you. The script also
+will tell you the final installation result.
+
+
+4. More information
+--------------------
+
+Ns-allinone is available from
+<http://sourceforge.net/projects/nsnam>
+or
+<http://www.isi.edu/nsnam/ns/ns-build.html>
+
+-----------------------------
+The nsnam Project
+http://www.nsnam.org
+
